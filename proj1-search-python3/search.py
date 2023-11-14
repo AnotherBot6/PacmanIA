@@ -181,18 +181,18 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     if problem.isGoalState(startingNode):
         return []
 
-    visitedNodes = []
+    visited = []
 
-    pQueue = util.PriorityQueue()
+    prQueue = util.PriorityQueue()
     #((coordinate/node , action to current node , cost to current node),priority)
-    pQueue.push((startingNode, [], 0), 0)
+    prQueue.push((startingNode, [], 0), 0)
 
-    while not pQueue.isEmpty():
+    while not prQueue.isEmpty():
 
-        currentNode, actions, prevCost = pQueue.pop()
+        currentNode, actions, prevCost = prQueue.pop()
 
-        if currentNode not in visitedNodes:
-            visitedNodes.append(currentNode)
+        if currentNode not in visited:
+            visited.append(currentNode)
 
             if problem.isGoalState(currentNode):
                 return actions
@@ -201,7 +201,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
                 newAction = actions + [action]
                 newCostToNode = prevCost + cost
                 heuristicCost = newCostToNode + heuristic(nextNode,problem)
-                pQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
+                prQueue.push((nextNode, newAction, newCostToNode),heuristicCost)
 
     util.raiseNotDefined()
 

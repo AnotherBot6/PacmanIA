@@ -352,21 +352,33 @@ def cornersHeuristic(state, problem):
     """
     A heuristic for the CornersProblem that you defined.
 
-      state:   The current search state
-               (a data structure you chose in your search problem)
+    state:   The current search state
+             (a data structure you chose in your search problem)
 
-      problem: The CornersProblem instance for this layout.
+    problem: The CornersProblem instance for this layout.
 
     This function should always return a number that is a lower bound on the
-    shortest path from the state to a goal of the problem; i.e.  it should be
+    shortest path from the state to a goal of the problem; i.e., it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    corners = problem.corners  # These are the corner coordinates
+    walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
+    unvisited_corners = [corner for i, corner in enumerate(corners) if not state[1][i]]
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    if not unvisited_corners:
+        return 0
 
+    # Use the MST distance as a heuristic estimate
+    mst_distance = 0
+
+    current_corner = state[0]
+    while unvisited_corners:
+        nearest_corner = min(unvisited_corners, key=lambda c: util.manhattanDistance(current_corner, c))
+        mst_distance += util.manhattanDistance(current_corner, nearest_corner)
+        current_corner = nearest_corner
+        unvisited_corners.remove(nearest_corner)
+
+    return mst_distance
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -431,23 +443,17 @@ class AStarFoodSearchAgent(SearchAgent):
 
 def foodHeuristic(state, problem):
     """
-    Your heuristic for the FoodSearchProblem goes here.
+    A heuristic for the FoodSearchProblem that computes the MST distance
+    between remaining food dots.
 
-    This heuristic must be consistent to ensure correctness.  First, try to come
-    up with an admissible heuristic; almost all admissible heuristics will be
-    consistent as well.
+    This heuristic must be consistent to ensure correctness.
 
-    If using A* ever finds a solution that is worse uniform cost search finds,
-    your heuristic is *not* consistent, and probably not admissible!  On the
-    other hand, inadmissible or inconsistent heuristics may find optimal
-    solutions, so be careful.
-
-    The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a Grid
+    The state is a tuple (pacmanPosition, foodGrid) where foodGrid is a Grid
     (see game.py) of either True or False. You can call foodGrid.asList() to get
     a list of food coordinates instead.
 
     If you want access to info like walls, capsules, etc., you can query the
-    problem.  For example, problem.walls gives you a Grid of where the walls
+    problem. For example, problem.walls gives you a Grid of where the walls
     are.
 
     If you want to *store* information to be reused in other calls to the
@@ -458,8 +464,22 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    remaining_food = foodGrid.asList()
+
+    # If there is no remaining food, heuristic is 0
+    if not remaining_food:
+        return 0
+
+    mst_distance = 0
+
+    current_position = position
+    while remaining_food:
+        nearest_food = min(remaining_food, key=lambda food: util.manhattanDistance(current_position, food))
+        mst_distance += util.manhattanDistance(current_position, nearest_food)
+        current_position = nearest_food
+        remaining_food.remove(nearest_food)
+
+    return mst_distance
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -489,8 +509,7 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.bfs(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -524,9 +543,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         complete the problem definition.
         """
         x,y = state
-
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
 
 def mazeDistance(point1, point2, gameState):
     """

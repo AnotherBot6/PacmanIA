@@ -379,6 +379,11 @@ def cornersHeuristic(state, problem):
         unvisited_corners.remove(nearest_corner)
 
     return mst_distance
+def customDistance(posA, posB):
+    """ Returns the custom distance between the specified positions.
+        Each position must be an iterable with X-coordinate as element 0, and Y-coordinate as element 1. """
+    return abs(posA[0] - posB[0]) + abs(posA[1] - posB[1])
+
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -441,45 +446,45 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         self.searchType = FoodSearchProblem
 
-def foodHeuristic(state, problem):
+def foodHeuristic(state, problem: FoodSearchProblem):
     """
-    A heuristic for the FoodSearchProblem that computes the MST distance
-    between remaining food dots.
+    Your heuristic for the FoodSearchProblem goes here.
 
-    This heuristic must be consistent to ensure correctness.
+    This heuristic must be consistent to ensure correctness. First, try to come
+    up with an admissible heuristic; almost all admissible heuristics will be
+    consistent as well.
 
-    The state is a tuple (pacmanPosition, foodGrid) where foodGrid is a Grid
-    (see game.py) of either True or False. You can call foodGrid.asList() to get
-    a list of food coordinates instead.
+    If using A* ever finds a solution that is worse uniform cost search finds,
+    your heuristic is *not* consistent, and probably not admissible! On the
+    other hand, inadmissible or inconsistent heuristics may find optimal
+    solutions, so be careful.
 
-    If you want access to info like walls, capsules, etc., you can query the
-    problem. For example, problem.walls gives you a Grid of where the walls
-    are.
-
-    If you want to *store* information to be reused in other calls to the
-    heuristic, there is a dictionary called problem.heuristicInfo that you can
-    use. For example, if you only want to count the walls once and store that
-    value, try: problem.heuristicInfo['wallCount'] = problem.walls.count()
-    Subsequent calls to this heuristic can access
-    problem.heuristicInfo['wallCount']
+    Returns the maximum distance between any 2 uneaten food dots + the minimum distance 
+    between one of them and the current position
     """
-    position, foodGrid = state
-    remaining_food = foodGrid.asList()
+    if problem.isGoalState(state):
+        return 0  # Return 0 in case of a goal state
 
-    # If there is no remaining food, heuristic is 0
-    if not remaining_food:
-        return 0
+    position, foodGrid = state  # Get the parent position and food Grid
+    food = foodGrid.asList()
+    maxDistance = 0
 
-    mst_distance = 0
+    # First, we find the two dots with the biggest distance
+    # Initialize both as the first dot in the food grid
+    # There is at least one dot, otherwise a goal state would have been detected
+    first = food[0]
+    second = food[0]
+    for i in range(len(food)):
+        for j in range(i + 1, len(food)):
+            dist = customDistance(food[i], food[j])
+            if dist > maxDistance:
+                maxDistance = dist
+                first = food[i]
+                second = food[j]
 
-    current_position = position
-    while remaining_food:
-        nearest_food = min(remaining_food, key=lambda food: util.manhattanDistance(current_position, food))
-        mst_distance += util.manhattanDistance(current_position, nearest_food)
-        current_position = nearest_food
-        remaining_food.remove(nearest_food)
-
-    return mst_distance
+    # Return the maximum distance between any 2 uneaten dots, plus the minimum distance
+    # between the current position and any one of them
+    return maxDistance + min((customDistance(position, first), customDistance(position, second)))
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
